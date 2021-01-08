@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -460,6 +460,7 @@ void ShenandoahConcurrentMark::finish_mark_from_roots(bool full_gc) {
                                             ShenandoahPhaseTimings::full_gc_scan_conc_roots :
                                             ShenandoahPhaseTimings::degen_gc_scan_conc_roots;
       ShenandoahGCPhase gc_phase(phase);
+      ShenandoahGCWorkerPhase worker_phase(phase);
       ShenandoahProcessConcurrentRootsTask<ShenandoahMarkRefsClosure> task(this, phase, nworkers);
       _heap->workers()->run_task(&task);
     }
