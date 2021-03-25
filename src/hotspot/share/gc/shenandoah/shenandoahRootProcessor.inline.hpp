@@ -162,7 +162,6 @@ void ShenandoahSTWRootScanner::roots_do(T* oops, uint worker_id) {
     _thread_roots.oops_do(oops, &blobs_cl, worker_id);
     _cld_roots.always_strong_cld_do(&clds, worker_id);
   } else {
-    AlwaysTrueClosure always_true;
     _thread_roots.oops_do(oops, NULL, worker_id);
     _code_roots.code_blobs_do(&blobs_cl, worker_id);
     _cld_roots.cld_do(&clds, worker_id);

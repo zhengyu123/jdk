@@ -257,9 +257,6 @@ ShenandoahHeapIterationRootScanner::ShenandoahHeapIterationRootScanner() :
    _code_roots(ShenandoahPhaseTimings::heap_iteration_roots) {
  }
 
-ShenandoahHeapIterationRootScanner::~ShenandoahHeapIterationRootScanner() {
-}
-
  void ShenandoahHeapIterationRootScanner::roots_do(OopClosure* oops) {
    assert(Thread::current()->is_VM_thread(), "Only by VM thread");
    // Must use _claim_none to avoid interfering with concurrent CLDG iteration

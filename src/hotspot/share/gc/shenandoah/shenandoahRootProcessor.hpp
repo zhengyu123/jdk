@@ -208,7 +208,6 @@ private:
 
 public:
   ShenandoahHeapIterationRootScanner();
-  ~ShenandoahHeapIterationRootScanner();
 
   void roots_do(OopClosure* cl);
 };

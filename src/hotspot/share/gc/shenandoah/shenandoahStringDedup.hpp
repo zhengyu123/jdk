@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2017, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,10 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHSTRINGDEDUP_HPP
 
 #include "gc/shared/stringdedup/stringDedup.hpp"
-#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
-#include "memory/iterator.hpp"
 
 class ShenandoahStringDedup : public StringDedup {
 public:
   static inline bool is_candidate(oop obj);
-
-private:
-  static bool check_string_candidate(oop java_string);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHSTRINGDEDUP_HPP

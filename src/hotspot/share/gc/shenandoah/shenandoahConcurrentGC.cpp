@@ -760,10 +760,6 @@ public:
       // may race against OopStorage::release() calls.
       ShenandoahEvacUpdateCleanupOopStorageRootsClosure cl;
       _vm_roots.oops_do(&cl, worker_id);
-
-      // String dedup weak roots
-      ShenandoahForwardedIsAliveClosure is_alive;
-      ShenandoahEvacuateUpdateMetadataClosure<MO_RELEASE> keep_alive;
     }
 
     // If we are going to perform concurrent class unloading later on, we need to

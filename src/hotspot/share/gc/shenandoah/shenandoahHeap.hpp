@@ -38,7 +38,6 @@
 #include "memory/metaspace.hpp"
 #include "services/memoryManager.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/globalDefinitions.hpp"
 #include "utilities/stack.hpp"
 
 class ConcurrentGCTimer;
