@@ -49,10 +49,8 @@ public:
 
   static inline bool is_candidate(oop obj);
 
-  static void unlink_or_oops_do(BoolObjectClosure* is_alive,
-                                OopClosure* keep_alive,
-                                bool allow_resize_and_rehash);
-
+private:
+  static bool check_string_candidate(oop java_string);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHSTRINGDEDUP_HPP

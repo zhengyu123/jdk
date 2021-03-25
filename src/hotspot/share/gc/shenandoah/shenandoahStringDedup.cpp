@@ -43,26 +43,24 @@ void ShenandoahStringDedup::initialize() {
 /* Enqueue candidates for deduplication.
  * The method should only be called by GC worker threads during marking phases.
  */
-void ShenandoahStringDedup::enqueue_candidate(oop java_string) {
+bool ShenandoahStringDedup::check_string_candidate(oop java_string) {
   assert(Thread::current()->is_Worker_thread(),
         "Only from a GC worker thread");
 
-  if (java_string->age() <= StringDeduplicationAgeThreshold) {
+  if (StringDedup::is_below_threshold_age(java_string->age())) {
     const markWord mark = java_string->mark();
-
     // Having/had displaced header, too risk to deal with them, skip
     if (mark == markWord::INFLATING() || mark.has_displaced_mark_helper()) {
-      return;
+      return false;
     }
 
     // Increase string age and enqueue it when it rearches age threshold
     markWord new_mark = mark.incr_age();
     if (mark == java_string->cas_set_mark(new_mark, mark)) {
-      if (mark.age() == StringDeduplicationAgeThreshold) {
-        StringDedupQueue::push(ShenandoahWorkerSession::worker_id(), java_string);
-      }
+      return StringDedup::is_threshold_age(new_mark.age());
     }
   }
+  return false;
 }
 
 // Deduplicate a string, return true if it is deduplicated.

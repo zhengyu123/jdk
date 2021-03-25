@@ -29,8 +29,12 @@
 #include "gc/shenandoah/shenandoahStringDedup.hpp"
 
 bool ShenandoahStringDedup::is_candidate(oop obj) {
-  return java_lang_String::is_instance_inlined(obj) &&
-         java_lang_String::value(obj) != NULL;
+  if (!java_lang_String::is_instance_inlined(obj) ||
+       java_lang_String::value(obj) == nullptr) {
+    return false;
+  }
+
+  return check_string_candidate(obj);
 }
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHSTRINGDEDUP_INLINE_HPP
