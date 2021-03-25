@@ -2274,14 +2274,6 @@ char ShenandoahHeap::gc_state() const {
   return _gc_state.raw_value();
 }
 
-void ShenandoahHeap::deduplicate_string(oop str) {
-  assert(java_lang_String::is_instance(str), "invariant");
-
-  if (ShenandoahStringDedup::is_enabled()) {
-    ShenandoahStringDedup::deduplicate(str);
-  }
-}
-
 ShenandoahLiveData* ShenandoahHeap::get_liveness_cache(uint worker_id) {
 #ifdef ASSERT
   assert(_liveness_cache != NULL, "sanity");

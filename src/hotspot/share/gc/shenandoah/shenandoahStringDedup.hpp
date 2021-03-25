@@ -31,22 +31,6 @@
 
 class ShenandoahStringDedup : public StringDedup {
 public:
-  // Initialize string deduplication.
-  static void initialize();
-
-  // Enqueue a string to worker's local string dedup queue
-  static void enqueue_candidate(oop java_string);
-
-  // Deduplicate a string, the call is lock-free
-  static void deduplicate(oop java_string);
-
-  static void parallel_oops_do(ShenandoahPhaseTimings::Phase phase,
-                               BoolObjectClosure* is_alive,
-                               OopClosure* cl,
-                               uint worker_id);
-
-  static void oops_do_slow(OopClosure* cl);
-
   static inline bool is_candidate(oop obj);
 
 private:

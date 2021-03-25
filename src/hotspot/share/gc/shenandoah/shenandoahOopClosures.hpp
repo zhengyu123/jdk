@@ -32,10 +32,14 @@
 #include "memory/iterator.hpp"
 #include "runtime/thread.hpp"
 
-template <typename T>
+enum StringDedupMode {
+  NO_DEDUP,      // Do not do anything for String deduplication
+  ENQUEUE_DEDUP  // Enqueue candidate Strings for deduplication
+};
+
 class ShenandoahMarkRefsSuperClosure : public MetadataVisitingOopIterateClosure {
 private:
-  T                         _stringDedup_requests;
+  StringDedup::Requests     _stringDedup_requests;
   ShenandoahObjToScanQueue* _queue;
   ShenandoahMarkingContext* const _mark_context;
   bool _weak;

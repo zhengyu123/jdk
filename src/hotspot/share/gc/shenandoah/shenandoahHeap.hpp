@@ -38,6 +38,7 @@
 #include "memory/metaspace.hpp"
 #include "services/memoryManager.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/stack.hpp"
 
 class ConcurrentGCTimer;
@@ -639,8 +640,6 @@ public:
   static inline oop cas_oop(oop n, narrowOop* addr, narrowOop c);
 
   void trash_humongous_region_at(ShenandoahHeapRegion *r);
-
-  void deduplicate_string(oop str);
 
 private:
   void trash_cset_regions();

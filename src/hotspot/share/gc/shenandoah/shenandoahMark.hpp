@@ -61,7 +61,7 @@ protected:
 
 public:
   template<class T, StringDedupMode STRING_DEDUP>
-  static inline void mark_through_ref(T* p, ShenandoahObjToScanQueue* q, ShenandoahMarkingContext* const mark_context, const StringDedup::Requests* req, bool weak);
+  static inline void mark_through_ref(T* p, ShenandoahObjToScanQueue* q, ShenandoahMarkingContext* const mark_context, StringDedup::Requests* const req, bool weak);
 
   static void clear();
 
