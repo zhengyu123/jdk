@@ -96,12 +96,16 @@ class java_lang_Object : AllStatic {
 
 // Interface to java.lang.String objects
 
+#define STRING_INJECTED_FIELDS(macro) \
+  macro(java_lang_String, no_deduplication, bool_signature, false)
+
 class java_lang_String : AllStatic {
  private:
   static int _value_offset;
   static int _hash_offset;
   static int _hashIsZero_offset;
   static int _coder_offset;
+  static int _no_deduplication_offset;
 
   static bool _initialized;
 
@@ -136,12 +140,14 @@ class java_lang_String : AllStatic {
 
   static inline void set_value_raw(oop string, typeArrayOop buffer);
   static inline void set_value(oop string, typeArrayOop buffer);
+  static inline void set_no_deduplication(oop java_string, bool value);
 
   // Accessors
   static inline typeArrayOop value(oop java_string);
   static inline typeArrayOop value_no_keepalive(oop java_string);
   static inline bool hash_is_set(oop string);
   static inline bool is_latin1(oop java_string);
+  static inline bool no_deduplication(oop java_string);
   static inline int length(oop java_string);
   static inline int length(oop java_string, typeArrayOop string_value);
   static int utf8_length(oop java_string);
@@ -1745,6 +1751,7 @@ class InjectedField {
   klass##_##name##_enum,
 
 #define ALL_INJECTED_FIELDS(macro)          \
+  STRING_INJECTED_FIELDS(macro)             \
   CLASS_INJECTED_FIELDS(macro)              \
   CLASSLOADER_INJECTED_FIELDS(macro)        \
   RESOLVEDMETHOD_INJECTED_FIELDS(macro)     \

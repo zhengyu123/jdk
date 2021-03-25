@@ -1385,11 +1385,6 @@ public:
   // after a full GC.
   void rebuild_strong_code_roots();
 
-  // Partial cleaning of VM internal data structures.
-  void string_dedup_cleaning(BoolObjectClosure* is_alive,
-                             OopClosure* keep_alive,
-                             G1GCPhaseTimes* phase_times = NULL);
-
   // Performs cleaning of data structures after class unloading.
   void complete_cleaning(BoolObjectClosure* is_alive, bool class_unloading_occurred);
 
@@ -1397,9 +1392,6 @@ public:
   void redirty_logged_cards(G1RedirtyCardsQueueSet* rdcqs);
 
   // Verification
-
-  // Deduplicate the string
-  virtual void deduplicate_string(oop str);
 
   // Perform any cleanup actions necessary before allowing a verification.
   virtual void prepare_for_verify();

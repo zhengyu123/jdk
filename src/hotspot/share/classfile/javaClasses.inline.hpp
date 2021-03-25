@@ -73,6 +73,18 @@ bool java_lang_String::is_latin1(oop java_string) {
   return coder == CODER_LATIN1;
 }
 
+bool java_lang_String::no_deduplication(oop java_string) {
+  assert(_initialized, "Must be initialized");
+  assert(is_instance(java_string), "must be java_string");
+  return java_string->bool_field(_no_deduplication_offset);
+}
+
+void java_lang_String::set_no_deduplication(oop java_string, bool value) {
+  assert(_initialized, "Must be initialized");
+  assert(is_instance(java_string), "must be java_string");
+  java_string->bool_field_put(_no_deduplication_offset, value);
+}
+
 int java_lang_String::length(oop java_string, typeArrayOop value) {
   assert(_initialized, "Must be initialized");
   assert(is_instance(java_string), "must be java_string");

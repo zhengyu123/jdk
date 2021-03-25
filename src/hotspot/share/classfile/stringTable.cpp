@@ -31,13 +31,13 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageSet.hpp"
+#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/archiveBuilder.hpp"
 #include "memory/heapShared.inline.hpp"
 #include "memory/resourceArea.hpp"
-#include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.hpp"
 #include "oops/oop.inline.hpp"
@@ -346,14 +346,16 @@ oop StringTable::do_intern(Handle string_or_null_h, const jchar* name,
     string_h = java_lang_String::create_from_unicode(name, len, CHECK_NULL);
   }
 
-  // Deduplicate the string before it is interned. Note that we should never
-  // deduplicate a string after it has been interned. Doing so will counteract
-  // compiler optimizations done on e.g. interned string literals.
-  Universe::heap()->deduplicate_string(string_h());
-
   assert(java_lang_String::equals(string_h(), name, len),
          "string must be properly initialized");
   assert(len == java_lang_String::length(string_h()), "Must be same length");
+
+  // Notify deduplication support that the string is being interned.  A string
+  // must never be deduplicated after it has been interned.  Doing so interferes
+  // with compiler optimizations don on e.g. interned string literals.
+  if (StringDedup::is_enabled()) {
+    StringDedup::notify_intern(string_h());
+  }
 
   StringTableLookupOop lookup(THREAD, hash, string_h);
   StringTableGet stg(THREAD);
@@ -781,15 +783,15 @@ void StringTable::serialize_shared_table_header(SerializeClosure* soc) {
 }
 
 class SharedStringIterator {
-  OopClosure* _oop_closure;
+  ObjectClosure* _closure;
 public:
-  SharedStringIterator(OopClosure* f) : _oop_closure(f) {}
+  SharedStringIterator(ObjectClosure* f) : _closure(f) {}
   void do_value(oop string) {
-    _oop_closure->do_oop(&string);
+    _closure->do_object(string);
   }
 };
 
-void StringTable::shared_oops_do(OopClosure* f) {
+void StringTable::shared_oops_do(ObjectClosure* f) {
   SharedStringIterator iter(f);
   _shared_table.iterate(&iter);
 }
