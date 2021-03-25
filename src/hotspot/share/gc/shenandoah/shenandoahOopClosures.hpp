@@ -25,21 +25,17 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHOOPCLOSURES_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHOOPCLOSURES_HPP
 
-#include "gc/shared/referenceProcessor.hpp"
+#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "gc/shenandoah/shenandoahStrDedupQueue.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "memory/iterator.hpp"
 #include "runtime/thread.hpp"
 
-enum StringDedupMode {
-  NO_DEDUP,      // Do not do anything for String deduplication
-  ENQUEUE_DEDUP  // Enqueue candidate Strings for deduplication
-};
-
+template <typename T>
 class ShenandoahMarkRefsSuperClosure : public MetadataVisitingOopIterateClosure {
 private:
+  T                         _stringDedup_requests;
   ShenandoahObjToScanQueue* _queue;
   ShenandoahMarkingContext* const _mark_context;
   bool _weak;
