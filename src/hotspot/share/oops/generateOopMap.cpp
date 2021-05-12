@@ -913,7 +913,8 @@ void GenerateOopMap::do_interpretation(Thread* thread)
   do {
     if (i != 0 && thread->is_Java_thread()) {
       JavaThread* jt = thread->as_Java_thread();
-      if (jt->thread_state() == _thread_in_vm) {
+      if (jt->thread_state() == _thread_in_vm &&
+          jt->handshake_state()->active_handshaker() != jt) {
         // Since this JavaThread has looped at least once and is _thread_in_vm,
         // we honor any pending blocking request.
         ThreadBlockInVM tbivm(jt);
