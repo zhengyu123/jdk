@@ -207,6 +207,45 @@ Node *MulINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     swap_edges(1, 2);
     // Finish rest of method to use info in 'con'
   } else if ((con = in(2)->find_int_con(0)) == 0) {
+
+    Node* in1 = in(1);
+    Node* in2 = in(2);
+    int op1 = in1->Opcode();
+    int op2 = in2->Opcode();
+    Node* mul_in1 = NULL;
+    Node* mul_in2 = NULL;
+    Node* mul_in = NULL;
+
+    if ((op1 == Op_MulI || op2 == Op_MulI) && (op1 != op2)) {
+      if (op1 == Op_MulI) {
+        if (in1->in(1)->Opcode() == Op_MulI && in1->in(2)->Opcode() != Op_MulI) {
+          mul_in = in1->in(1);
+          mul_in1 = in1->in(2);
+          mul_in2 = in2;
+        } else if (in1->in(2)->Opcode() == Op_MulI && in1->in(1)->Opcode() != Op_MulI) {
+          mul_in = in1->in(2);
+          mul_in1 = in1->in(1);
+          mul_in2 = in2;
+        }
+      } else {
+        assert(op2 == Op_MulI, "Must be");
+        if (in2->in(1)->Opcode() == Op_MulI && in2->in(2)->Opcode() != Op_MulI) {
+          mul_in = in2->in(1);
+          mul_in1 = in2->in(2);
+          mul_in2 = in1;
+        } else if (in2->in(2)->Opcode() == Op_MulI && in2->in(1)->Opcode() != Op_MulI) {
+          mul_in = in2->in(2);
+          mul_in1 = in2->in(1);
+          mul_in2 = in1;
+        }
+      }
+    }
+
+    if (mul_in != NULL) {
+      Node* mul = phase->transform(new MulINode(mul_in1, mul_in2));
+      return new MulINode(mul, mul_in);
+    }
+
     return MulNode::Ideal(phase, can_reshape);
   }
 
