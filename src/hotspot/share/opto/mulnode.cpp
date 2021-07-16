@@ -206,90 +206,91 @@ Node *MulINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if ((con = in(1)->find_int_con(0)) != 0) {
     swap_edges(1, 2);
     // Finish rest of method to use info in 'con'
-  } else if ((con = in(2)->find_int_con(0)) == 0) {
+  } else if ((con = in(2)->find_int_con(0)) != 0) {
+    // Now we have a constant Node on the right and the constant in con
+    if (con == 0) return NULL;   // By zero is handled by Value call
+    if (con == 1) return NULL;   // By one  is handled by Identity call
 
-    Node* in1 = in(1);
-    Node* in2 = in(2);
-    int op1 = in1->Opcode();
-    int op2 = in2->Opcode();
-    Node* mul_in1 = NULL;
-    Node* mul_in2 = NULL;
-    Node* mul_in = NULL;
+    // Check for negative constant; if so negate the final result
+    bool sign_flip = false;
 
-    if ((op1 == Op_MulI || op2 == Op_MulI) && (op1 != op2)) {
-      if (op1 == Op_MulI) {
-        if (in1->in(1)->Opcode() == Op_MulI && in1->in(2)->Opcode() != Op_MulI) {
-          mul_in = in1->in(1);
-          mul_in1 = in1->in(2);
-          mul_in2 = in2;
-        } else if (in1->in(2)->Opcode() == Op_MulI && in1->in(1)->Opcode() != Op_MulI) {
-          mul_in = in1->in(2);
-          mul_in1 = in1->in(1);
-          mul_in2 = in2;
-        }
+    unsigned int abs_con = uabs(con);
+    if (abs_con != (unsigned int)con) {
+      sign_flip = true;
+    }
+
+    // Get low bit; check for being the only bit
+    Node *res = NULL;
+    unsigned int bit1 = abs_con & (0-abs_con);       // Extract low bit
+    if (bit1 == abs_con) {           // Found a power of 2?
+      res = new LShiftINode(in(1), phase->intcon(log2i_exact(bit1)));
+    } else {
+      // Check for constant with 2 bits set
+      unsigned int bit2 = abs_con - bit1;
+      bit2 = bit2 & (0 - bit2);          // Extract 2nd bit
+      if (bit2 + bit1 == abs_con) {    // Found all bits in con?
+        Node *n1 = phase->transform(new LShiftINode(in(1), phase->intcon(log2i_exact(bit1))));
+        Node *n2 = phase->transform(new LShiftINode(in(1), phase->intcon(log2i_exact(bit2))));
+        res = new AddINode(n2, n1);
+      } else if (is_power_of_2(abs_con + 1)) {
+        // Sleezy: power-of-2 - 1.  Next time be generic.
+        unsigned int temp = abs_con + 1;
+        Node *n1 = phase->transform(new LShiftINode(in(1), phase->intcon(log2i_exact(temp))));
+        res = new SubINode(n1, in(1));
       } else {
-        assert(op2 == Op_MulI, "Must be");
-        if (in2->in(1)->Opcode() == Op_MulI && in2->in(2)->Opcode() != Op_MulI) {
-          mul_in = in2->in(1);
-          mul_in1 = in2->in(2);
-          mul_in2 = in1;
-        } else if (in2->in(2)->Opcode() == Op_MulI && in2->in(1)->Opcode() != Op_MulI) {
-          mul_in = in2->in(2);
-          mul_in1 = in2->in(1);
-          mul_in2 = in1;
-        }
+        return MulNode::Ideal(phase, can_reshape);
       }
     }
 
-    if (mul_in != NULL) {
-      Node* mul = phase->transform(new MulINode(mul_in1, mul_in2));
-      return new MulINode(mul, mul_in);
+    if (sign_flip) {             // Need to negate result?
+      res = phase->transform(res);// Transform, before making the zero con
+      res = new SubINode(phase->intcon(0),res);
     }
 
-    return MulNode::Ideal(phase, can_reshape);
+    return res;                   // Return final result
   }
 
-  // Now we have a constant Node on the right and the constant in con
-  if (con == 0) return NULL;   // By zero is handled by Value call
-  if (con == 1) return NULL;   // By one  is handled by Identity call
+  // Convert "a*b*c*d" into "(a*b)*(c*d)" to improve parallelism.
+  // Also provides chances for common expression elimination, e.g.
+  // a*b*c*d*a*b*c*d or a*a*a*a, etc.
+  Node* in1 = in(1);
+  Node* in2 = in(2);
+  int op1 = in1->Opcode();
+  int op2 = in2->Opcode();
+  Node* mul_in1 = NULL;
+  Node* mul_in2 = NULL;
+  Node* mul_in = NULL;
 
-  // Check for negative constant; if so negate the final result
-  bool sign_flip = false;
-
-  unsigned int abs_con = uabs(con);
-  if (abs_con != (unsigned int)con) {
-    sign_flip = true;
-  }
-
-  // Get low bit; check for being the only bit
-  Node *res = NULL;
-  unsigned int bit1 = abs_con & (0-abs_con);       // Extract low bit
-  if (bit1 == abs_con) {           // Found a power of 2?
-    res = new LShiftINode(in(1), phase->intcon(log2i_exact(bit1)));
-  } else {
-    // Check for constant with 2 bits set
-    unsigned int bit2 = abs_con - bit1;
-    bit2 = bit2 & (0 - bit2);          // Extract 2nd bit
-    if (bit2 + bit1 == abs_con) {    // Found all bits in con?
-      Node *n1 = phase->transform(new LShiftINode(in(1), phase->intcon(log2i_exact(bit1))));
-      Node *n2 = phase->transform(new LShiftINode(in(1), phase->intcon(log2i_exact(bit2))));
-      res = new AddINode(n2, n1);
-    } else if (is_power_of_2(abs_con + 1)) {
-      // Sleezy: power-of-2 - 1.  Next time be generic.
-      unsigned int temp = abs_con + 1;
-      Node *n1 = phase->transform(new LShiftINode(in(1), phase->intcon(log2i_exact(temp))));
-      res = new SubINode(n1, in(1));
+  if ((op1 == Op_MulI || op2 == Op_MulI) && (op1 != op2)) {
+    if (op1 == Op_MulI) {
+      if (in1->in(1)->Opcode() == Op_MulI && in1->in(2)->Opcode() != Op_MulI) {
+        mul_in = in1->in(1);
+        mul_in1 = in1->in(2);
+        mul_in2 = in2;
+      } else if (in1->in(2)->Opcode() == Op_MulI && in1->in(1)->Opcode() != Op_MulI) {
+        mul_in = in1->in(2);
+        mul_in1 = in1->in(1);
+        mul_in2 = in2;
+      }
     } else {
-      return MulNode::Ideal(phase, can_reshape);
+      assert(op2 == Op_MulI, "Must be");
+      if (in2->in(1)->Opcode() == Op_MulI && in2->in(2)->Opcode() != Op_MulI) {
+        mul_in = in2->in(1);
+        mul_in1 = in2->in(2);
+        mul_in2 = in1;
+      } else if (in2->in(2)->Opcode() == Op_MulI && in2->in(1)->Opcode() != Op_MulI) {
+        mul_in = in2->in(2);
+        mul_in1 = in2->in(1);
+        mul_in2 = in1;
+      }
     }
   }
-
-  if (sign_flip) {             // Need to negate result?
-    res = phase->transform(res);// Transform, before making the zero con
-    res = new SubINode(phase->intcon(0),res);
+  if (mul_in != NULL) {
+    Node* mul = phase->transform(new MulINode(mul_in1, mul_in2));
+    return new MulINode(mul, mul_in);
   }
 
-  return res;                   // Return final result
+  return MulNode::Ideal(phase, can_reshape);
 }
 
 //------------------------------mul_ring---------------------------------------
@@ -340,52 +341,92 @@ Node *MulLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if ((con = in(1)->find_long_con(0)) != 0) {
     swap_edges(1, 2);
     // Finish rest of method to use info in 'con'
-  } else if ((con = in(2)->find_long_con(0)) == 0) {
-    return MulNode::Ideal(phase, can_reshape);
-  }
+  } else if ((con = in(2)->find_long_con(0)) != 0) {
+    // Now we have a constant Node on the right and the constant in con
+    if (con == CONST64(0)) return NULL;  // By zero is handled by Value call
+    if (con == CONST64(1)) return NULL;  // By one  is handled by Identity call
 
-  // Now we have a constant Node on the right and the constant in con
-  if (con == CONST64(0)) return NULL;  // By zero is handled by Value call
-  if (con == CONST64(1)) return NULL;  // By one  is handled by Identity call
+    // Check for negative constant; if so negate the final result
+    bool sign_flip = false;
+    julong abs_con = uabs(con);
+    if (abs_con != (julong)con) {
+      sign_flip = true;
+    }
 
-  // Check for negative constant; if so negate the final result
-  bool sign_flip = false;
-  julong abs_con = uabs(con);
-  if (abs_con != (julong)con) {
-    sign_flip = true;
-  }
-
-  // Get low bit; check for being the only bit
-  Node *res = NULL;
-  julong bit1 = abs_con & (0-abs_con);      // Extract low bit
-  if (bit1 == abs_con) {           // Found a power of 2?
-    res = new LShiftLNode(in(1), phase->intcon(log2i_exact(bit1)));
-  } else {
-
-    // Check for constant with 2 bits set
-    julong bit2 = abs_con-bit1;
-    bit2 = bit2 & (0-bit2);          // Extract 2nd bit
-    if (bit2 + bit1 == abs_con) {    // Found all bits in con?
-      Node *n1 = phase->transform(new LShiftLNode(in(1), phase->intcon(log2i_exact(bit1))));
-      Node *n2 = phase->transform(new LShiftLNode(in(1), phase->intcon(log2i_exact(bit2))));
-      res = new AddLNode(n2, n1);
-
-    } else if (is_power_of_2(abs_con+1)) {
-      // Sleezy: power-of-2 -1.  Next time be generic.
-      julong temp = abs_con + 1;
-      Node *n1 = phase->transform( new LShiftLNode(in(1), phase->intcon(log2i_exact(temp))));
-      res = new SubLNode(n1, in(1));
+    // Get low bit; check for being the only bit
+    Node *res = NULL;
+    julong bit1 = abs_con & (0-abs_con);      // Extract low bit
+    if (bit1 == abs_con) {           // Found a power of 2?
+      res = new LShiftLNode(in(1), phase->intcon(log2i_exact(bit1)));
     } else {
-      return MulNode::Ideal(phase, can_reshape);
+
+      // Check for constant with 2 bits set
+      julong bit2 = abs_con-bit1;
+      bit2 = bit2 & (0-bit2);          // Extract 2nd bit
+      if (bit2 + bit1 == abs_con) {    // Found all bits in con?
+        Node *n1 = phase->transform(new LShiftLNode(in(1), phase->intcon(log2i_exact(bit1))));
+        Node *n2 = phase->transform(new LShiftLNode(in(1), phase->intcon(log2i_exact(bit2))));
+        res = new AddLNode(n2, n1);
+
+      } else if (is_power_of_2(abs_con+1)) {
+        // Sleezy: power-of-2 -1.  Next time be generic.
+        julong temp = abs_con + 1;
+        Node *n1 = phase->transform( new LShiftLNode(in(1), phase->intcon(log2i_exact(temp))));
+        res = new SubLNode(n1, in(1));
+      } else {
+        return MulNode::Ideal(phase, can_reshape);
+      }
+    }
+
+    if (sign_flip) {             // Need to negate result?
+      res = phase->transform(res);// Transform, before making the zero con
+      res = new SubLNode(phase->longcon(0),res);
+    }
+
+    return res;                   // Return final result
+  }
+
+  // Convert "a*b*c*d" into "(a*b)*(c*d)" to improve parallelism.
+  // Also provides chances for common expression elimination, e.g.
+  // a*b*c*d*a*b*c*d or a*a*a*a, etc.
+  Node* in1 = in(1);
+  Node* in2 = in(2);
+  int op1 = in1->Opcode();
+  int op2 = in2->Opcode();
+  Node* mul_in1 = NULL;
+  Node* mul_in2 = NULL;
+  Node* mul_in = NULL;
+
+  if ((op1 == Op_MulL || op2 == Op_MulL) && (op1 != op2)) {
+    if (op1 == Op_MulL) {
+      if (in1->in(1)->Opcode() == Op_MulL && in1->in(2)->Opcode() != Op_MulL) {
+        mul_in = in1->in(1);
+        mul_in1 = in1->in(2);
+        mul_in2 = in2;
+      } else if (in1->in(2)->Opcode() == Op_MulL && in1->in(1)->Opcode() != Op_MulL) {
+        mul_in = in1->in(2);
+        mul_in1 = in1->in(1);
+        mul_in2 = in2;
+      }
+    } else {
+      assert(op2 == Op_MulL, "Must be");
+      if (in2->in(1)->Opcode() == Op_MulL && in2->in(2)->Opcode() != Op_MulL) {
+        mul_in = in2->in(1);
+        mul_in1 = in2->in(2);
+        mul_in2 = in1;
+      } else if (in2->in(2)->Opcode() == Op_MulL && in2->in(1)->Opcode() != Op_MulL) {
+        mul_in = in2->in(2);
+        mul_in1 = in2->in(1);
+        mul_in2 = in1;
+      }
     }
   }
-
-  if (sign_flip) {             // Need to negate result?
-    res = phase->transform(res);// Transform, before making the zero con
-    res = new SubLNode(phase->longcon(0),res);
+  if (mul_in != NULL) {
+    Node* mul = phase->transform(new MulLNode(mul_in1, mul_in2));
+    return new MulLNode(mul, mul_in);
   }
 
-  return res;                   // Return final result
+  return MulNode::Ideal(phase, can_reshape);
 }
 
 //------------------------------mul_ring---------------------------------------
