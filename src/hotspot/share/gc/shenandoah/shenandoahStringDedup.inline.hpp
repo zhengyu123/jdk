@@ -37,24 +37,7 @@ bool ShenandoahStringDedup::is_string_candidate(oop obj) {
 }
 
 bool ShenandoahStringDedup::is_candidate(oop obj) {
-  if (!is_string_candidate(obj)) {
-    return false;
-  }
-
-  if (StringDedup::is_below_threshold_age(obj->age())) {
-    const markWord mark = obj->mark();
-    // Having/had displaced header, too risk to deal with them, skip
-    if (mark == markWord::INFLATING() || mark.has_displaced_mark_helper()) {
-      return false;
-    }
-
-    // Increase string age and enqueue it when it rearches age threshold
-    markWord new_mark = mark.incr_age();
-    if (mark == obj->cas_set_mark(new_mark, mark)) {
-      return StringDedup::is_threshold_age(new_mark.age());
-    }
-  }
-  return false;
+  return is_string_candidate(obj);
 }
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHSTRINGDEDUP_INLINE_HPP
