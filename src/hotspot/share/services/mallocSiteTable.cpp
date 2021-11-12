@@ -26,7 +26,7 @@
 
 #include "memory/allocation.inline.hpp"
 #include "runtime/atomic.hpp"
-#include "services/mallocSiteTable.hpp"
+#include "services/mallocSiteTable.inline.hpp"
 
 // Malloc site hashtable buckets
 MallocSiteHashtableEntry*  MallocSiteTable::_table[MallocSiteTable::table_size];
@@ -205,15 +205,15 @@ void MallocSiteTable::delete_linked_list(MallocSiteHashtableEntry* head) {
 }
 
 void MallocSiteTable::shutdown() {
-  AccessLock locker(&_access_count);
-  locker.exclusiveLock();
+  AccessGuard guard;
+  guard.exclusive_access();
   reset();
 }
 
 bool MallocSiteTable::walk_malloc_site(MallocSiteWalker* walker) {
   assert(walker != NULL, "NuLL walker");
-  AccessLock locker(&_access_count);
-  if (locker.sharedLock()) {
+  AccessGuard guard;
+  if (guard.shared_access()) {
     NOT_PRODUCT(_peak_count = MAX2(_peak_count, _access_count);)
     return walk(walker);
   }
@@ -221,34 +221,33 @@ bool MallocSiteTable::walk_malloc_site(MallocSiteWalker* walker) {
 }
 
 
-void MallocSiteTable::AccessLock::exclusiveLock() {
+void MallocSiteTable::AccessGuard::exclusive_access() {
   int target;
   int val;
 
-  assert(_lock_state != ExclusiveLock, "Can only call once");
-  assert(*_lock >= 0, "Can not content exclusive lock");
+  assert(_access_state != ExclusiveAccess, "Can only call once");
+  assert(Atomic::load(&_guard) >= 0, "Can not content exclusive lock");
 
   // make counter negative to block out shared locks
   do {
-    val = *_lock;
-    target = _MAGIC_ + *_lock;
-  } while (Atomic::cmpxchg(_lock, val, target) != val);
+    val = Atomic::load(&_guard);
+    target = _MAGIC_ + val;
+  } while (Atomic::cmpxchg(&_guard, val, target, memory_order_relaxed) != val);
 
   // wait for all readers to exit
-  while (*_lock != _MAGIC_) {
+  while (Atomic::load(&_guard) != _MAGIC_) {
 #ifdef _WINDOWS
     os::naked_short_sleep(1);
 #else
     os::naked_yield();
 #endif
   }
-  _lock_state = ExclusiveLock;
+  _access_state = ExclusiveAccess;
 }
 
 void MallocSiteTable::print_tuning_statistics(outputStream* st) {
-
-  AccessLock locker(&_access_count);
-  if (locker.sharedLock()) {
+  AccessGuard guard;
+  if (guard.shared_access()) {
       // Total number of allocation sites, include empty sites
     int total_entries = 0;
     // Number of allocation sites that have all memory freed

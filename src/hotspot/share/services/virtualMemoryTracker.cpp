@@ -658,6 +658,8 @@ void VirtualMemoryTracker::snapshot_thread_stacks() {
 bool VirtualMemoryTracker::walk_virtual_memory(VirtualMemoryWalker* walker) {
   assert(_reserved_regions != NULL, "Sanity check");
   ThreadCritical tc;
+  if (MemTracker::tracking_level() < NMT_summary) return false;
+
   // Check that the _reserved_regions haven't been deleted.
   if (_reserved_regions != NULL) {
     LinkedListNode<ReservedMemoryRegion>* head = _reserved_regions->head();

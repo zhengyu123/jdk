@@ -164,15 +164,15 @@ bool MemBaseline::baseline_allocation_sites() {
     return false;
   }
 
-  _malloc_sites.move(malloc_walker.malloc_sites());
-  // The malloc sites are collected in size order
-  _malloc_sites_order = by_size;
-
   // Virtual memory allocation sites
   VirtualMemoryAllocationWalker virtual_memory_walker;
   if (!VirtualMemoryTracker::walk_virtual_memory(&virtual_memory_walker)) {
     return false;
   }
+
+  _malloc_sites.move(malloc_walker.malloc_sites());
+  // The malloc sites are collected in size order
+  _malloc_sites_order = by_size;
 
   // Virtual memory allocations are collected in call stack order
   _virtual_memory_allocations.move(virtual_memory_walker.virtual_memory_allocations());

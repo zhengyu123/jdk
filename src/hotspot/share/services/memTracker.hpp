@@ -204,7 +204,6 @@ class MemTracker : AllStatic {
   static inline void record_virtual_memory_reserve(void* addr, size_t size, const NativeCallStack& stack,
     MEMFLAGS flag = mtNone) {
     assert_post_init();
-    if (tracking_level() < NMT_summary) return;
     if (addr != NULL) {
       ThreadCritical tc;
       // Recheck to avoid potential racing during NMT shutdown
@@ -216,7 +215,6 @@ class MemTracker : AllStatic {
   static inline void record_virtual_memory_reserve_and_commit(void* addr, size_t size,
     const NativeCallStack& stack, MEMFLAGS flag = mtNone) {
     assert_post_init();
-    if (tracking_level() < NMT_summary) return;
     if (addr != NULL) {
       ThreadCritical tc;
       if (tracking_level() < NMT_summary) return;
@@ -228,7 +226,6 @@ class MemTracker : AllStatic {
   static inline void record_virtual_memory_commit(void* addr, size_t size,
     const NativeCallStack& stack) {
     assert_post_init();
-    if (tracking_level() < NMT_summary) return;
     if (addr != NULL) {
       ThreadCritical tc;
       if (tracking_level() < NMT_summary) return;
@@ -244,7 +241,6 @@ class MemTracker : AllStatic {
   //  memory flags of the original region.
   static inline void record_virtual_memory_split_reserved(void* addr, size_t size, size_t split) {
     assert_post_init();
-    if (tracking_level() < NMT_summary) return;
     if (addr != NULL) {
       ThreadCritical tc;
       // Recheck to avoid potential racing during NMT shutdown
@@ -255,7 +251,6 @@ class MemTracker : AllStatic {
 
   static inline void record_virtual_memory_type(void* addr, MEMFLAGS flag) {
     assert_post_init();
-    if (tracking_level() < NMT_summary) return;
     if (addr != NULL) {
       ThreadCritical tc;
       if (tracking_level() < NMT_summary) return;
@@ -265,16 +260,18 @@ class MemTracker : AllStatic {
 
   static void record_thread_stack(void* addr, size_t size) {
     assert_post_init();
-    if (tracking_level() < NMT_summary) return;
     if (addr != NULL) {
+      ThreadCritical tc;
+      if (MemTracker::tracking_level() < NMT_summary) return;
       ThreadStackTracker::new_thread_stack((address)addr, size, CALLER_PC);
     }
   }
 
   static inline void release_thread_stack(void* addr, size_t size) {
     assert_post_init();
-    if (tracking_level() < NMT_summary) return;
     if (addr != NULL) {
+      ThreadCritical tc;
+      if (tracking_level() < NMT_summary) return;
       ThreadStackTracker::delete_thread_stack((address)addr, size);
     }
   }

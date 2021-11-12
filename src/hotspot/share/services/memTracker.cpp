@@ -189,7 +189,6 @@ void MemTracker::tuning_statistics(outputStream* out) {
   out->print_cr("State: %s", NMTUtil::tracking_level_to_string(_tracking_level));
   out->print_cr("Malloc allocation site table size: %d", MallocSiteTable::hash_buckets());
   out->print_cr("             Tracking stack depth: %d", NMT_TrackingStackDepth);
-  NOT_PRODUCT(out->print_cr("Peak concurrent access: %d", MallocSiteTable::access_peak_count());)
   out->cr();
   MallocSiteTable::print_tuning_statistics(out);
   out->cr();

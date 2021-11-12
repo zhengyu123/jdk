@@ -23,8 +23,7 @@
  */
 #include "precompiled.hpp"
 
-#include "services/mallocSiteTable.hpp"
-#include "services/mallocTracker.hpp"
+#include "services/mallocSiteTable.inline.hpp"
 #include "services/mallocTracker.inline.hpp"
 #include "services/memTracker.hpp"
 
