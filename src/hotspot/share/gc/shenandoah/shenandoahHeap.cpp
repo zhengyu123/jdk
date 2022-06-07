@@ -72,6 +72,7 @@
 #include "gc/shenandoah/shenandoahJfrSupport.hpp"
 #endif
 
+#include "classfile/javaClasses.inline.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "memory/classLoaderMetaspace.hpp"
 #include "memory/metaspaceUtils.hpp"
@@ -2318,8 +2319,19 @@ bool ShenandoahHeap::requires_barriers(stackChunkOop obj) const {
   }
 
   // Can not guarantee obj is deeply good.
-  if (has_forwarded_objects()) {
+  if (is_concurrent_weak_root_in_progress() ||
+      is_concurrent_strong_root_in_progress()) {
     return true;
+  }
+
+  if (has_forwarded_objects()) {
+    if (in_collection_set(obj)) {
+      return true;
+    }
+
+    const oop cont_oop = UseCompressedOops ? jdk_internal_vm_StackChunk::cont_raw<narrowOop>(obj) :
+                                             jdk_internal_vm_StackChunk::cont_raw<oop>(obj);
+    return in_collection_set(cont_oop);
   }
 
   return false;
