@@ -398,7 +398,8 @@ class RuntimeBlob : public CodeBlob {
 
   // Deal with Disassembler, VTune, Forte, JvmtiExport, MemoryService.
   static void trace_new_stub(RuntimeBlob* blob, const char* name1, const char* name2 = "");
-protected:
+
+ protected:
   // This ordinary operator delete is needed even though not used, so the
   // below two-argument operator delete will be treated as a placement
   // delete rather than an ordinary sized delete; see C++14 3.7.4.2/p2.
