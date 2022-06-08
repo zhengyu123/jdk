@@ -398,6 +398,11 @@ class RuntimeBlob : public CodeBlob {
 
   // Deal with Disassembler, VTune, Forte, JvmtiExport, MemoryService.
   static void trace_new_stub(RuntimeBlob* blob, const char* name1, const char* name2 = "");
+protected:
+  // This ordinary operator delete is needed even though not used, so the
+  // below two-argument operator delete will be treated as a placement
+  // delete rather than an ordinary sized delete; see C++14 3.7.4.2/p2.
+  void operator delete(void* p);
 };
 
 class WhiteBox;
@@ -417,10 +422,6 @@ class BufferBlob: public RuntimeBlob {
   BufferBlob(const char* name, int size);
   BufferBlob(const char* name, int size, CodeBuffer* cb);
 
-  // This ordinary operator delete is needed even though not used, so the
-  // below two-argument operator delete will be treated as a placement
-  // delete rather than an ordinary sized delete; see C++14 3.7.4.2/p2.
-  void operator delete(void* p);
   void* operator new(size_t s, unsigned size) throw();
 
  public:
@@ -506,11 +507,6 @@ class RuntimeStub: public RuntimeBlob {
     bool        caller_must_gc_arguments
   );
 
-  // This ordinary operator delete is needed even though not used, so the
-  // below two-argument operator delete will be treated as a placement
-  // delete rather than an ordinary sized delete; see C++14 3.7.4.2/p2.
-  void operator delete(void* p);
-  void operator delete (void* p, size_t size);
   void* operator new(size_t s, unsigned size) throw();
 
  public:
@@ -764,10 +760,6 @@ class UpcallStub: public RuntimeBlob {
                      intptr_t exception_handler_offset,
                      jobject receiver, ByteSize frame_data_offset);
 
-  // This ordinary operator delete is needed even though not used, so the
-  // below two-argument operator delete will be treated as a placement
-  // delete rather than an ordinary sized delete; see C++14 3.7.4.2/p2.
-  void operator delete(void* p);
   void* operator new(size_t s, unsigned size) throw();
 
   struct FrameData {
