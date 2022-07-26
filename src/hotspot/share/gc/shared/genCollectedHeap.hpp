@@ -35,9 +35,6 @@ class AdaptiveSizePolicy;
 class CardTableRS;
 class GCPolicyCounters;
 class GenerationSpec;
-class StrongRootsScope;
-class SubTasksDone;
-class WorkerThreads;
 
 // A "GenCollectedHeap" is a CollectedHeap that uses generational
 // collection.  It has two generations, young and old.
