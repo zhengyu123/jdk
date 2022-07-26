@@ -40,6 +40,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/stack.hpp"
 
+class AdaptiveSizePolicy;
 class ConcurrentGCTimer;
 class ObjectIterateScanRootClosure;
 class ShenandoahCollectorPolicy;
@@ -55,7 +56,6 @@ class ShenandoahHeapRegion;
 class ShenandoahHeapRegionClosure;
 class ShenandoahCollectionSet;
 class ShenandoahFreeSet;
-class ShenandoahConcurrentMark;
 class ShenandoahFullGC;
 class ShenandoahMonitoringSupport;
 class ShenandoahPacer;
