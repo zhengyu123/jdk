@@ -892,10 +892,6 @@ JvmtiEventControllerPrivate::set_user_enabled(JvmtiEnvBase *env, JavaThread *thr
             thread==NULL? "ALL": JvmtiTrace::safe_get_thread_name(thread),
             enabled? "enabled" : "disabled", JvmtiTrace::event_name(event_type)));
 
-  if (event_type == JVMTI_EVENT_OBJECT_FREE) {
-    flush_object_free_events(env);
-  }
-
   if (thread == NULL && thread_oop_h() == NULL) {
     // NULL thread and NULL thread_oop now indicate setting globally instead
     // of setting thread specific since NULL thread by itself means an
@@ -1056,8 +1052,13 @@ JvmtiEventController::set_user_enabled(JvmtiEnvBase *env, JavaThread *thread, oo
     Thread* current = Thread::current();
     HandleMark hmi(current);
     Handle thread_oop_h = Handle(current, thread_oop);
-    MutexLocker mu(JvmtiThreadState_lock);
-    JvmtiEventControllerPrivate::set_user_enabled(env, thread, thread_oop_h, event_type, enabled);
+    if (event_type == JVMTI_EVENT_OBJECT_FREE) {
+      JvmtiEventControllerPrivate::flush_object_free_events(env);
+    }
+    {
+      MutexLocker mu(JvmtiThreadState_lock);
+      JvmtiEventControllerPrivate::set_user_enabled(env, thread, thread_oop_h, event_type, enabled);
+    }
   }
 }
 
