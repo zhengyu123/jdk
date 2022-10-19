@@ -62,6 +62,14 @@ bool G1PeriodicGCTask::should_start_periodic_gc(G1CollectedHeap* g1h,
     return false;
   }
 
+
+  // Check if committed region already reach the minimum
+  if (g1h->num_regions() <= align_up(MinHeapSize, HeapRegion::GrainBytes)) {
+    log_debug(gc, periodic)("Minimum committed size " SIZE_FORMAT " already reached",
+                            MinHeapSize);
+    return false;
+  }
+
   // Record counters with GC safepoints blocked, to get a consistent snapshot.
   // These are passed to try_collect so a GC between our release of the
   // STS-joiner and the GC VMOp can be detected and cancel the request.
