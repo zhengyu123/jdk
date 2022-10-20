@@ -31,6 +31,7 @@
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "logging/log.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -63,10 +64,17 @@ bool G1PeriodicGCTask::should_start_periodic_gc(G1CollectedHeap* g1h,
   }
 
 
-  // Check if committed region already reach the minimum
-  if (g1h->num_regions() <= align_up(MinHeapSize, HeapRegion::GrainBytes)) {
-    log_debug(gc, periodic)("Minimum committed size " SIZE_FORMAT " already reached",
-                            MinHeapSize);
+  // If MinHeapSize is set by commandline, heap should not be shrunk below this limit
+  if (FLAG_IS_CMDLINE(MinHeapSize) && g1h->num_regions() <= align_up(MinHeapSize, HeapRegion::GrainBytes)) {
+    log_debug(gc, periodic)("Committed heap size can not go below MinHeapSize set by command line");
+    return false;
+  }
+
+  // Check MaxHeapFreeRatio is exceeded
+  const double max_free_percentage = (double) MaxHeapFreeRatio / 100.0;
+  double used_percentage = ((double)g1h->used_unlocked()) / g1h->capacity();
+  if (used_percentage > max_free_percentage) {
+    log_debug(gc, periodic)("Heap usage is below MaxHeapFreeRatio");
     return false;
   }
 
