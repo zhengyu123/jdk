@@ -230,6 +230,7 @@ class CodeCache : AllStatic {
   // Dcmd (Diagnostic commands)
   static void print_codelist(outputStream* st);
   static void print_layout(outputStream* st);
+  static void print_code(outputStream* st, void* address);
 
   // The full limits of the codeCache
   static address low_bound()                          { return _low_bound; }

@@ -234,9 +234,13 @@ const ImmutableOopMap* CodeBlob::oop_map_for_return_address(address return_addre
   return _oop_maps->find_map_at_offset((intptr_t) return_address - (intptr_t) code_begin());
 }
 
-void CodeBlob::print_code() {
+void CodeBlob::print_code(outputStream* st) {
   ResourceMark m;
-  Disassembler::decode(this, tty);
+  Disassembler::decode(this, st);
+}
+
+void CodeBlob::print_code() {
+  print_code(tty);
 }
 
 //----------------------------------------------------------------------------------------------------

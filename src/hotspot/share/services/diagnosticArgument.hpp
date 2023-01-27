@@ -99,6 +99,7 @@ public:
   }
 
   void to_string(jlong l, char* buf, size_t len) const;
+  void to_string(uintx l, char* buf, size_t len) const;
   void to_string(bool b, char* buf, size_t len) const;
   void to_string(char* c, char* buf, size_t len) const;
   void to_string(NanoTimeArgument n, char* buf, size_t len) const;

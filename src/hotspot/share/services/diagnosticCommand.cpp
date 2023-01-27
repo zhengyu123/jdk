@@ -123,6 +123,7 @@ void DCmdRegistrant::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompileQueueDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CodeListDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CodeCacheDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PrintCodeDCmd>(full_export, true, false));
 #ifdef LINUX
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PerfMapDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<TrimCLibcHeapDCmd>(full_export, true, false));
@@ -829,6 +830,16 @@ void CompileQueueDCmd::execute(DCmdSource source, TRAPS) {
 
 void CodeListDCmd::execute(DCmdSource source, TRAPS) {
   CodeCache::print_codelist(output());
+}
+
+PrintCodeDCmd::PrintCodeDCmd(outputStream* output, bool heap)  : DCmdWithParser(output, heap),
+  _address("address", "Address to the compiled code", "UINTX", true, "0x0") {
+  _dcmdparser.add_dcmd_argument(&_address);
+}
+
+void PrintCodeDCmd::execute(DCmdSource source, TRAPS) {
+
+  CodeCache::print_code(output(), (void*)_address.value());
 }
 
 void CodeCacheDCmd::execute(DCmdSource source, TRAPS) {

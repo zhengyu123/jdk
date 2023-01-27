@@ -606,6 +606,29 @@ public:
   virtual void execute(DCmdSource source, TRAPS);
 };
 
+class PrintCodeDCmd : public DCmdWithParser {
+protected:
+  DCmdArgument<uintx> _address;
+
+public:
+  PrintCodeDCmd(outputStream* output, bool heap);
+  static const char* name() {
+    return "Compiler.printcode";
+  }
+  static const char* description() {
+    return "Print compiled code";
+  }
+  static const char* impact() {
+    return "Medium";
+  }
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.lang.management.ManagementPermission",
+                        "monitor", NULL};
+    return p;
+  }
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
 class CodeCacheDCmd : public DCmd {
 public:
   CodeCacheDCmd(outputStream* output, bool heap) : DCmd(output, heap) {}

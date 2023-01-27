@@ -71,6 +71,10 @@ void GenDCmdArgument::to_string(jlong l, char* buf, size_t len) const {
   jio_snprintf(buf, len, INT64_FORMAT, l);
 }
 
+void GenDCmdArgument::to_string(uintx l, char* buf, size_t len) const {
+  jio_snprintf(buf, len, UINTX_FORMAT_X, l);
+}
+
 void GenDCmdArgument::to_string(bool b, char* buf, size_t len) const {
   jio_snprintf(buf, len, b ? "true" : "false");
 }
@@ -108,6 +112,22 @@ void GenDCmdArgument::to_string(StringArrayArgument* f, char* buf, size_t len) c
   }
 }
 
+template <> void DCmdArgument<uintx>::parse_value(const char* str,
+                                                  size_t len, TRAPS) {
+  int scanned = -1;
+  if (str == NULL
+      || sscanf(str, UINTX_FORMAT_X "%n", &_value, &scanned) != 1
+      || (size_t)scanned != len)
+  {
+    const int maxprint = 64;
+    Exceptions::fthrow(THREAD_AND_LOCATION, vmSymbols::java_lang_IllegalArgumentException(),
+      "uintx parsing error in command argument '%s'. Could not parse: %.*s%s.\n", _name,
+      MIN2((int)len, maxprint),
+      (str == NULL ? "<null>" : str),
+      (len > maxprint ? "..." : ""));
+  }
+}
+
 template <> void DCmdArgument<jlong>::parse_value(const char* str,
                                                   size_t len, TRAPS) {
   int scanned = -1;
@@ -136,6 +156,20 @@ template <> void DCmdArgument<jlong>::init_value(TRAPS) {
 }
 
 template <> void DCmdArgument<jlong>::destroy_value() { }
+
+
+template <> void DCmdArgument<uintx>::init_value(TRAPS) {
+  if (has_default()) {
+    this->parse_value(_default_string, strlen(_default_string), THREAD);
+    if (HAS_PENDING_EXCEPTION) {
+      fatal("Default string must be parseable");
+    }
+  } else {
+    set_value(0);
+  }
+}
+
+template <> void DCmdArgument<uintx>::destroy_value() { }
 
 template <> void DCmdArgument<bool>::parse_value(const char* str,
                                                  size_t len, TRAPS) {

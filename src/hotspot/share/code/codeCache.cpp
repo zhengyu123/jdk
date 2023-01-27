@@ -1808,6 +1808,18 @@ void CodeCache::print_codelist(outputStream* st) {
   }
 }
 
+void CodeCache::print_code(outputStream* st, void* address) {
+  MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+
+  CodeBlob* blob = find_blob(address);
+  if (blob != nullptr) {
+    blob->print_code(st);
+  } else {
+    st->print_cr("No compiled code found at " INTPTR_FORMAT, p2i(address));
+  }
+
+}
+
 void CodeCache::print_layout(outputStream* st) {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
   ResourceMark rm;
