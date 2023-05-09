@@ -1138,55 +1138,175 @@ public class ZipFile implements ZipConstants, Closeable {
              }
         );
     }
+
+    // Zip Central directory and ENDHDR
+    private static interface CEN {
+        long sig(int pos);
+        int  how(int pos);
+        int  flg(int pos);
+        int  nam(int pos);
+
+        int  ext(int pos);
+        int  com(int pos);
+
+        long siz(int pos);
+        long len(int pos);
+        long off(int pos);
+
+        long tim(int pos);
+        long crc(int pos);
+        int vem_fa(int pos);
+        int atx_perms(int pos);
+
+        int get16(int off);
+        long get32(int off);
+
+        long get64(int off);
+
+        byte[] segment(int pos, int len);
+        int length();
+    }
+
+    // Cached CEN in heap
+    private static class InHeapCEN implements CEN {
+        private byte[] cen;
+
+        InHeapCEN(byte[] cen) {
+            this.cen = cen;
+        }
+
+        @Override
+        public int length() {
+            return cen.length;
+        }
+
+        @Override
+        public long sig(int pos) {
+            return CENSIG(cen, pos);
+        }
+
+        @Override
+        public int how(int pos) {
+            return CENHOW(cen, pos);
+        }
+
+        @Override
+        public int flg(int pos) {
+            return CENFLG(cen, pos);
+        }
+        @Override
+        public long siz(int pos) {
+            return CENSIZ(cen, pos);
+        }
+
+        @Override
+        public long len(int pos) {
+            return CENLEN(cen, pos);
+        }
+
+        @Override
+        public long off(int pos) {
+            return CENOFF(cen, pos);
+        }
+
+        @Override
+        public int nam(int pos) {
+            return CENNAM(cen, pos);
+        }
+
+        public int ext(int pos) {
+            return CENEXT(cen, pos);
+        }
+
+        public int com(int pos) {
+            return CENCOM(cen, pos);
+        }
+        public long tim(int pos) {
+            return CENTIM(cen, pos);
+        }
+
+        public long crc(int pos) {
+            return CENCRC(cen, pos);
+        }
+
+        public int vem_fa(int pos) {
+            return CENVEM_FA(cen, pos);
+        }
+
+        public int atx_perms(int pos) {
+            return CENATX_PERMS(cen, pos);
+        }
+
+
+        public int get16(int off) {
+            return java.util.zip.ZipUtils.get16(cen, off);
+        }
+
+        public long get32(int off) {
+            return java.util.zip.ZipUtils.get32(cen, off);
+        }
+
+        public long get64(int off) {
+            return java.util.zip.ZipUtils.get64(cen, off);
+        }
+
+        public byte[] segment(int pos, int len) {
+            return Arrays.copyOfRange(cen, pos, pos + len);
+        }
+    }
+
     // Without in heap cache, directly map to zip file
-    private static class CEN {
+    private static class MMapedCEN implements CEN {
         private static final int CACHE_SIZE = 64;
         private MappedByteBuffer directBuffer;
         private long length;
 
-        private int readPos;
-        private byte[] buffer;
-
-        CEN(FileChannel fileChannel, long offset, long len) throws IOException {
+        MMapedCEN(FileChannel fileChannel, long offset, long len) throws IOException {
             this.directBuffer = fileChannel.map(FileChannel.MapMode.READ_ONLY, offset, len).load();
             this.length = len;
-            readPos = -1;
-            buffer = new byte[CACHE_SIZE];
         }
 
+        @Override
         public int length() {
             return (int)length;
         }
 
+        @Override
         public long sig(int pos) {
             byte[] cen = read(pos, 4);
             return CENSIG(cen, 0);
         }
 
+        @Override
         public int how(int pos) {
             byte[] cen = read(pos, 12);
             return CENHOW(cen, 0);
         }
 
+        @Override
         public int flg(int pos) {
             byte[] cen = read(pos, 10);
             return CENFLG(cen, 0);
         }
+        @Override
         public long siz(int pos) {
             byte[] cen = read(pos, 24);
             return CENSIZ(cen, 0);
         }
 
+        @Override
         public long len(int pos) {
             byte[] cen = read(pos, 28);
             return CENLEN(cen, 0);
         }
 
+        @Override
         public long off(int pos) {
             byte[] cen = read(pos, 46);
             return CENOFF(cen, 0);
         }
 
+        @Override
         public int nam(int pos) {
             byte[] cen = read(pos, 30);
             return CENNAM(cen, 0);
@@ -1256,22 +1376,21 @@ public class ZipFile implements ZipConstants, Closeable {
                 throw new RuntimeException("Out of bound");
             }
 
-            if (len > buffer.length) {
-                buffer = new byte[len];
-                this.readPos = -1;
-            }
-
-            if (pos != this.readPos) {
-                directBuffer.position(pos);
-                directBuffer.get(buffer);
-                readPos = pos;
-            }
-
-            return buffer;
+            byte[] bytes = new byte[len];
+            directBuffer.position(pos);
+            directBuffer.get(bytes);
+            return bytes;
         }
     }
 
     private static class Source {
+        private static boolean USE_MAPPED_CEN;
+        static {
+            try {
+                USE_MAPPED_CEN = Boolean.parseBoolean(System.getProperty("java.util.zip.ZipFile.useMappedCEN", "false"));
+            } catch (NumberFormatException ex) {
+            }
+        }
         // While this is only used from ZipFile, defining it there would cause
         // a bootstrap cycle that would leave this initialized as null
         private static final JavaUtilJarAccess JUJA = SharedSecrets.javaUtilJarAccess();
@@ -1285,7 +1404,7 @@ public class ZipFile implements ZipConstants, Closeable {
         private int refs = 1;
 
         private RandomAccessFile zfile;      // zfile of the underlying zip file
-        private CEN cen;                  // CEN & ENDHDR
+        private CEN cen;                     // CEN & ENDHDR
         private long locpos;                 // position of first LOC header (usually 0)
         private byte[] comment;              // zip file comment
                                              // list of meta entries in META-INF dir
@@ -1651,15 +1770,28 @@ public class ZipFile implements ZipConstants, Closeable {
                 if (end.cenlen + ENDHDR >= Integer.MAX_VALUE) {
                     zerror("invalid END header (central directory size too large)");
                 }
-                try {
-                    FileChannel fileChannel = this.zfile.getChannel();
-                    if (fileChannel instanceof FileChannelImpl) {
-                        ((FileChannelImpl)fileChannel).setUninterruptible();
-                        cen = this.cen = new CEN(fileChannel, cenpos, (end.cenlen + ENDHDR));
+
+                if (USE_MAPPED_CEN) {
+                    try {
+                        FileChannel fileChannel = this.zfile.getChannel();
+                        if (fileChannel instanceof FileChannelImpl) {
+                            ((FileChannelImpl) fileChannel).setUninterruptible();
+                            cen = this.cen = new MMapedCEN(fileChannel, cenpos, (end.cenlen + ENDHDR));
+                        }
+                    } catch (IOException e) {
                     }
-                } catch (IOException e) {
-                    zerror("read CEN tables failed");
                 }
+
+                // !USE_MAPPED_CEN or fallback
+                if (cen == null) {
+                    // read in the CEN and END
+                    byte[] content = new byte[(int) (end.cenlen + ENDHDR)];
+                    if (readFullyAt(content, 0, content.length, cenpos) != end.cenlen + ENDHDR) {
+                        zerror("read CEN tables failed");
+                    }
+                    cen = this.cen = new InHeapCEN(content);
+                }
+
                 this.total = end.centot;
             } else {
                 cen = this.cen;
