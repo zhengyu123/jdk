@@ -1257,7 +1257,6 @@ public class ZipFile implements ZipConstants, Closeable {
 
     // Without in heap cache, directly map to zip file
     private static class MMapedCEN implements CEN {
-        private static final int CACHE_SIZE = 64;
         private MappedByteBuffer directBuffer;
         private long length;
 
@@ -1362,8 +1361,10 @@ public class ZipFile implements ZipConstants, Closeable {
             }
 
             byte[] seg = new byte[len];
-            directBuffer.position(pos);
-            directBuffer.get(seg);
+            synchronized (this) {
+                directBuffer.position(pos);
+                directBuffer.get(seg);
+            }
             return seg;
         }
 
@@ -1377,8 +1378,10 @@ public class ZipFile implements ZipConstants, Closeable {
             }
 
             byte[] bytes = new byte[len];
-            directBuffer.position(pos);
-            directBuffer.get(bytes);
+            synchronized (this) {
+                directBuffer.position(pos);
+                directBuffer.get(bytes);
+            }
             return bytes;
         }
     }
