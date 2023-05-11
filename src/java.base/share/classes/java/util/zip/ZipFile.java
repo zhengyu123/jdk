@@ -1256,11 +1256,11 @@ public class ZipFile implements ZipConstants, Closeable {
     }
 
     // Without in heap cache, directly map to zip file
-    private static class MMapedCEN implements CEN {
+    private static class MapedCEN implements CEN {
         private MappedByteBuffer directBuffer;
         private long length;
 
-        MMapedCEN(FileChannel fileChannel, long offset, long len) throws IOException {
+        MapedCEN(FileChannel fileChannel, long offset, long len) throws IOException {
             this.directBuffer = fileChannel.map(FileChannel.MapMode.READ_ONLY, offset, len).load();
             this.length = len;
         }
@@ -1779,7 +1779,7 @@ public class ZipFile implements ZipConstants, Closeable {
                         FileChannel fileChannel = this.zfile.getChannel();
                         if (fileChannel instanceof FileChannelImpl) {
                             ((FileChannelImpl) fileChannel).setUninterruptible();
-                            cen = this.cen = new MMapedCEN(fileChannel, cenpos, (end.cenlen + ENDHDR));
+                            cen = this.cen = new MapedCEN(fileChannel, cenpos, (end.cenlen + ENDHDR));
                         }
                     } catch (IOException e) {
                     }
