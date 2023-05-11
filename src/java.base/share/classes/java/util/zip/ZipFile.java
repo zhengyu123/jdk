@@ -37,6 +37,7 @@ import java.nio.MappedByteBuffer;
 import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
+import java.nio.channels.FileLock;
 import java.nio.file.InvalidPathException;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.Files;
@@ -1379,7 +1380,11 @@ public class ZipFile implements ZipConstants, Closeable {
 
         public void release() {
             if (fileLock != null) {
-                fileLock.release();
+                try {
+                    fileLock.release();
+                } catch (IOException e) {
+
+                }
             }
         }
 
@@ -1614,7 +1619,9 @@ public class ZipFile implements ZipConstants, Closeable {
         }
 
         private void close() throws IOException {
-            cen.release();
+            if (cen != null) {
+                cen.release();
+            }
             zfile.close();
             zfile = null;
             cen = null;
