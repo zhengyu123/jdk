@@ -1165,6 +1165,8 @@ public class ZipFile implements ZipConstants, Closeable {
 
         byte[] segment(int pos, int len);
         int length();
+
+        void release();
     }
 
     // Cached CEN in heap
@@ -1253,6 +1255,10 @@ public class ZipFile implements ZipConstants, Closeable {
         public byte[] segment(int pos, int len) {
             return Arrays.copyOfRange(cen, pos, pos + len);
         }
+
+        public void release() {
+            cen = null;
+        }
     }
 
     // Without in heap cache, directly map to zip file
@@ -1260,9 +1266,12 @@ public class ZipFile implements ZipConstants, Closeable {
         private MappedByteBuffer directBuffer;
         private long length;
 
+        private FileLock fileLock;
+
         MapedCEN(FileChannel fileChannel, long offset, long len) throws IOException {
             this.directBuffer = fileChannel.map(FileChannel.MapMode.READ_ONLY, offset, len).load();
             this.length = len;
+            fileLock = fileChannel.lock(offset, len, true);
         }
 
         @Override
@@ -1368,8 +1377,10 @@ public class ZipFile implements ZipConstants, Closeable {
             return seg;
         }
 
-        private void ensureValid(int pos) throws RuntimeException {
-            if (pos >= length()) throw new RuntimeException("Out of bound");
+        public void release() {
+            if (fileLock != null) {
+                fileLock.release();
+            }
         }
 
         private byte[] read(int pos, int len) {
@@ -1603,6 +1614,7 @@ public class ZipFile implements ZipConstants, Closeable {
         }
 
         private void close() throws IOException {
+            cen.release();
             zfile.close();
             zfile = null;
             cen = null;
