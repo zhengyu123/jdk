@@ -53,12 +53,11 @@
 class InterfaceSupport: AllStatic {
 # ifdef ASSERT
  public:
-  static unsigned int _scavenge_alot_counter;
   static unsigned int _fullgc_alot_counter;
   static intx _fullgc_alot_invocation;
 
   // Helper methods used to implement +ScavengeALot and +FullGCALot
-  static void check_gc_alot() { if (ScavengeALot || FullGCALot) gc_alot(); }
+  static void check_gc_alot() { if (FullGCALot) gc_alot(); }
   static void gc_alot();
 
   static void walk_stack_from(vframe* start_vf);

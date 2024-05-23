@@ -230,10 +230,6 @@
           "free space in this calculation. (G1 collector only)")            \
           range(0, 100)                                                     \
                                                                             \
-  develop(bool, ScavengeALot, false,                                        \
-          "Force scavenge at every Nth exit from the runtime system "       \
-          "(N=ScavengeALotInterval)")                                       \
-                                                                            \
   develop(bool, FullGCALot, false,                                          \
           "Force full gc at every Nth exit from the runtime system "        \
           "(N=FullGCALotInterval)")                                         \
@@ -509,9 +505,6 @@
           "If non-zero, assert that GC threads yield within this "          \
           "number of milliseconds")                                         \
           range(0, max_intx)                                                \
-                                                                            \
-  develop(int, ScavengeALotInterval,     1,                                 \
-          "Interval between which scavenge will occur with +ScavengeALot")  \
                                                                             \
   develop(int, FullGCALotInterval,     1,                                   \
           "Interval between which full gc will occur with +FullGCALot")     \

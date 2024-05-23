@@ -77,7 +77,6 @@ VMNativeEntryWrapper::~VMNativeEntryWrapper() {
   if (GCALotAtAllSafepoints) InterfaceSupport::check_gc_alot();
 }
 
-unsigned int InterfaceSupport::_scavenge_alot_counter = 1;
 unsigned int InterfaceSupport::_fullgc_alot_counter   = 1;
 intx InterfaceSupport::_fullgc_alot_invocation = 0;
 
@@ -120,25 +119,6 @@ void InterfaceSupport::gc_alot() {
       // Print progress message
       if (invocations % 100 == 0) {
         log_trace(gc)("Full gc no: %u", invocations);
-      }
-    } else {
-      if (ScavengeALot) _scavenge_alot_counter--;
-      // Check if we should force a scavenge
-      if (_scavenge_alot_counter == 0) {
-        HandleMark hm(thread);
-        Universe::heap()->collect(GCCause::_scavenge_alot);
-        unsigned int invocations = Universe::heap()->total_collections() - Universe::heap()->total_full_collections();
-        // Compute new interval
-        if (ScavengeALotInterval > 1) {
-          _scavenge_alot_counter = 1+(unsigned int)((double)ScavengeALotInterval*os::random()/(max_jint+1.0));
-          log_trace(gc)("Scavenge no: %u\tInterval: %u", invocations, _scavenge_alot_counter);
-        } else {
-          _scavenge_alot_counter = 1;
-        }
-        // Print progress message
-        if (invocations % 1000 == 0) {
-          log_trace(gc)("Scavenge no: %u", invocations);
-        }
       }
     }
   }
@@ -246,8 +226,8 @@ void InterfaceSupport::verify_last_frame() {
 
 void InterfaceSupport_init() {
 #ifdef ASSERT
-  if (ScavengeALot || FullGCALot) {
-    srand(ScavengeALotInterval * FullGCALotInterval);
+  if (FullGCALot) {
+    srand(FullGCALotInterval);
   }
 #endif
 }
