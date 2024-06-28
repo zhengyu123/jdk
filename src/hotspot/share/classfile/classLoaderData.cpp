@@ -202,9 +202,9 @@ OopHandle ClassLoaderData::ChunkedHandleList::add(oop o) {
 
 int ClassLoaderData::ChunkedHandleList::count() const {
   int count = 0;
-  Chunk* chunk = _head;
+  Chunk* chunk = Atomic::load_acquire(&_head);
   while (chunk != nullptr) {
-    count += chunk->_size;
+    count += Atomic::load(&chunk->_size);
     chunk = chunk->_next;
   }
   return count;
