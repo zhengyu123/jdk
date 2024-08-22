@@ -117,13 +117,17 @@ inline void follow_array_specialized(objArrayOop obj, int index, ParCompactionMa
   assert(beg_index < len || len == 0, "index too large");
 
   const size_t stride = MIN2(len - beg_index, (size_t)ObjArrayMarkingStride);
-  const size_t end_index = beg_index + stride;
+  size_t end_index = beg_index + stride;
   T* const base = (T*)obj->base();
   T* const beg = base + beg_index;
   T* const end = base + end_index;
 
-  if (end_index < len) {
-    cm->push_objarray(obj, end_index); // Push the continuation.
+  // Split the remaining array into chunks
+  if (index == 0) {
+     while (end_index < len) {
+        cm->push_objarray(obj, end_index); // Push the continuation.
+        end_index += (size_t)ObjArrayMarkingStride;
+     }
   }
 
   // Push the non-null elements of the next stride on the marking stack.
