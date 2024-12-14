@@ -33,6 +33,7 @@
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
+#include "runtime/orderAccess.hpp"
 #include "utilities/spinYield.hpp"
 #include "utilities/align.hpp"
 
@@ -355,11 +356,12 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
   preprocess_card_table_parallel(object_start, old_gen_bottom, old_gen_top, stripe_index, n_stripes);
 
   // Sync with other workers.
-  Atomic::dec(&_preprocessing_active_workers);
+  Atomic::dec(&_preprocessing_active_workers, memory_order_release);
   SpinYield spin_yield;
-  while (Atomic::load_acquire(&_preprocessing_active_workers) > 0) {
+  while (Atomic::load(&_preprocessing_active_workers) > 0) {
     spin_yield.wait();
   }
+  OrderAccess::acquire();
 
   // Scavenge
   cached_obj = {nullptr, old_gen_bottom};
