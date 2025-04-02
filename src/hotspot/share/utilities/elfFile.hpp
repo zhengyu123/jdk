@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,6 @@
 #endif
 #include <stdio.h>
 
-#ifdef _LP64
-
 typedef Elf64_Half      Elf_Half;
 typedef Elf64_Word      Elf_Word;
 typedef Elf64_Off       Elf_Off;
@@ -48,23 +46,6 @@ typedef Elf64_Sym       Elf_Sym;
 
 #if !defined(_ALLBSD_SOURCE) || defined(__APPLE__)
 #define ELF_ST_TYPE ELF64_ST_TYPE
-#endif
-
-#else
-
-typedef Elf32_Half      Elf_Half;
-typedef Elf32_Word      Elf_Word;
-typedef Elf32_Off       Elf_Off;
-typedef Elf32_Addr      Elf_Addr;
-
-typedef Elf32_Ehdr      Elf_Ehdr;
-typedef Elf32_Shdr      Elf_Shdr;
-typedef Elf32_Phdr      Elf_Phdr;
-typedef Elf32_Sym       Elf_Sym;
-
-#if !defined(_ALLBSD_SOURCE) || defined(__APPLE__)
-#define ELF_ST_TYPE ELF32_ST_TYPE
-#endif
 #endif
 
 #include "jvm_md.h"
@@ -398,7 +379,7 @@ class ElfFile: public CHeapObj<mtInternal> {
  */
 class DwarfFile : public ElfFile {
 
-  static constexpr uint8_t ADDRESS_SIZE = NOT_LP64(4) LP64_ONLY(8);
+  static constexpr uint8_t ADDRESS_SIZE = 8;
   // We only support 32-bit DWARF (emitted by GCC) which uses 32-bit values for DWARF section lengths and offsets
   // relative to the beginning of a section.
   static constexpr uint8_t DWARF_SECTION_OFFSET_SIZE = 4;
