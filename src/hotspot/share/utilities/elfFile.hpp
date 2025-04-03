@@ -34,20 +34,6 @@
 #endif
 #include <stdio.h>
 
-typedef Elf64_Half      Elf_Half;
-typedef Elf64_Word      Elf_Word;
-typedef Elf64_Off       Elf_Off;
-typedef Elf64_Addr      Elf_Addr;
-
-typedef Elf64_Ehdr      Elf_Ehdr;
-typedef Elf64_Shdr      Elf_Shdr;
-typedef Elf64_Phdr      Elf_Phdr;
-typedef Elf64_Sym       Elf_Sym;
-
-#if !defined(_ALLBSD_SOURCE) || defined(__APPLE__)
-#define ELF_ST_TYPE ELF64_ST_TYPE
-#endif
-
 #include "jvm_md.h"
 #include "globalDefinitions.hpp"
 #include "memory/allocation.hpp"
