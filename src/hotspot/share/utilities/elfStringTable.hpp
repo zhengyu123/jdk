@@ -45,7 +45,7 @@ private:
   NullDecoder::decoder_status _status;
 
 public:
-  ElfStringTable(FILE* const file, Elf_Shdr& shdr, int index);
+  ElfStringTable(FILE* const file, Elf64_Shdr& shdr, int index);
   ~ElfStringTable();
 
   // section index

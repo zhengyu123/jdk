@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ private:
 
   NullDecoder::decoder_status _status;
 public:
-  ElfSymbolTable(FILE* const file, Elf_Shdr& shdr);
+  ElfSymbolTable(FILE* const file, Elf64_Shdr& shdr);
   ~ElfSymbolTable();
 
   // search the symbol that is nearest to the specified address.
@@ -62,7 +62,7 @@ private:
   ElfSymbolTable* next() const { return _next; }
   void set_next(ElfSymbolTable* next) { _next = next; }
 
-  bool compare(const Elf_Sym* sym, address addr, int* stringtableIndex, int* posIndex, int* offset, ElfFuncDescTable* funcDescTable);
+  bool compare(const Elf64_Sym* sym, address addr, int* stringtableIndex, int* posIndex, int* offset, ElfFuncDescTable* funcDescTable);
 };
 
 #endif // !_WINDOWS and !__APPLE__

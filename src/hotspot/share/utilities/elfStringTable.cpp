@@ -32,7 +32,7 @@
 
 // We will try to load whole string table into memory if we can.
 // Otherwise, fallback to more expensive file operation.
-ElfStringTable::ElfStringTable(FILE* const file, Elf_Shdr& shdr, int index) :
+ElfStringTable::ElfStringTable(FILE* const file, Elf64_Shdr& shdr, int index) :
   _next(nullptr), _index(index), _section(file, shdr), _fd(file) {
   _status = _section.status();
 }
@@ -58,7 +58,7 @@ bool ElfStringTable::string_at(size_t pos, char* buf, int buflen) {
     jio_snprintf(buf, buflen, "%s", data + pos);
     return true;
   } else {  // no cache data, read from file instead
-    const Elf_Shdr* const shdr = _section.section_header();
+    const Elf64_Shdr* const shdr = _section.section_header();
     MarkedFileReader mfd(_fd);
     if (mfd.has_mark() &&
       mfd.set_position(shdr->sh_offset + pos) &&

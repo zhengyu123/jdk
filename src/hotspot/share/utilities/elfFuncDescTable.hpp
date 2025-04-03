@@ -128,11 +128,11 @@ private:
 
   NullDecoder::decoder_status  _status;
 public:
-  ElfFuncDescTable(FILE* file, Elf_Shdr shdr, int index);
+  ElfFuncDescTable(FILE* file, Elf64_Shdr shdr, int index);
   ~ElfFuncDescTable();
 
   // return the function address for the function descriptor at 'index' or null on error
-  address lookup(Elf_Addr index);
+  address lookup(Elf64_Addr index);
 
   int get_index() const { return _index; };
 

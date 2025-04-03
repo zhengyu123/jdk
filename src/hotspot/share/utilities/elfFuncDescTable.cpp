@@ -29,7 +29,7 @@
 #include "memory/allocation.inline.hpp"
 #include "utilities/elfFuncDescTable.hpp"
 
-ElfFuncDescTable::ElfFuncDescTable(FILE* file, Elf_Shdr shdr, int index) :
+ElfFuncDescTable::ElfFuncDescTable(FILE* file, Elf64_Shdr shdr, int index) :
   _section(file, shdr), _file(file), _index(index) {
   assert(file, "null file handle");
   // The actual function address (i.e. function entry point) is always the
@@ -44,13 +44,13 @@ ElfFuncDescTable::ElfFuncDescTable(FILE* file, Elf_Shdr shdr, int index) :
 ElfFuncDescTable::~ElfFuncDescTable() {
 }
 
-address ElfFuncDescTable::lookup(Elf_Addr index) {
+address ElfFuncDescTable::lookup(Elf64_Addr index) {
   if (NullDecoder::is_error(_status)) {
     return nullptr;
   }
 
   address*  func_descs = cached_func_descs();
-  const Elf_Shdr* shdr = _section.section_header();
+  const Elf64_Shdr* shdr = _section.section_header();
   if (!(shdr->sh_size > 0 && shdr->sh_addr <= index && index <= shdr->sh_addr + shdr->sh_size)) {
     // don't put the whole decoder in error mode if we just tried a wrong index
     return nullptr;

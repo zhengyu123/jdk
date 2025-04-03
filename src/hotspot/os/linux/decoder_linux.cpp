@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,15 +67,15 @@ bool ElfFile::specifies_noexecstack(const char* filepath) {
   bool result = AARCH64_ONLY(true) NOT_AARCH64(false);
 
   // Read file header
-  Elf_Ehdr head;
-  if (fread(&head, sizeof(Elf_Ehdr), 1, file) == 1 &&
+  Elf64_Ehdr head;
+  if (fread(&head, sizeof(Elf64_Ehdr), 1, file) == 1 &&
       is_elf_file(head) &&
       fseek(file, head.e_phoff, SEEK_SET) == 0) {
 
     // Read program header table
-    Elf_Phdr phdr;
+    Elf64_Phdr phdr;
     for (int index = 0; index < head.e_phnum; index ++) {
-      if (fread((void*)&phdr, sizeof(Elf_Phdr), 1, file) != 1) {
+      if (fread((void*)&phdr, sizeof(Elf64_Phdr), 1, file) != 1) {
         result = false;
         break;
       }

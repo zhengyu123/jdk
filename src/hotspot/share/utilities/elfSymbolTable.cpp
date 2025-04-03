@@ -30,12 +30,12 @@
 #include "utilities/elfFuncDescTable.hpp"
 #include "utilities/elfSymbolTable.hpp"
 
-ElfSymbolTable::ElfSymbolTable(FILE* const file, Elf_Shdr& shdr) :
+ElfSymbolTable::ElfSymbolTable(FILE* const file, Elf64_Shdr& shdr) :
   _next(nullptr), _fd(file), _section(file, shdr) {
   assert(file != nullptr, "null file handle");
   _status = _section.status();
 
-  if (_section.section_header()->sh_size % sizeof(Elf_Sym) != 0) {
+  if (_section.section_header()->sh_size % sizeof(Elf64_Sym) != 0) {
     _status = NullDecoder::file_invalid;
   }
 }
@@ -46,10 +46,10 @@ ElfSymbolTable::~ElfSymbolTable() {
   }
 }
 
-bool ElfSymbolTable::compare(const Elf_Sym* sym, address addr, int* stringtableIndex, int* posIndex, int* offset, ElfFuncDescTable* funcDescTable) {
-  if (STT_FUNC == ELF_ST_TYPE(sym->st_info)) {
+bool ElfSymbolTable::compare(const Elf64_Sym* sym, address addr, int* stringtableIndex, int* posIndex, int* offset, ElfFuncDescTable* funcDescTable) {
+  if (STT_FUNC == ELF64_ST_TYPE(sym->st_info)) {
     Elf64_Xword st_size = sym->st_size;
-    const Elf_Shdr* shdr = _section.section_header();
+    const Elf64_Shdr* shdr = _section.section_header();
     address sym_addr;
     if (funcDescTable != nullptr && funcDescTable->get_index() == sym->st_shndx) {
       // We need to go another step through the function descriptor table (currently PPC64 only)
@@ -57,7 +57,7 @@ bool ElfSymbolTable::compare(const Elf_Sym* sym, address addr, int* stringtableI
     } else {
       sym_addr = (address)sym->st_value;
     }
-    if (sym_addr <= addr && (Elf_Word)(addr - sym_addr) < st_size) {
+    if (sym_addr <= addr && (Elf64_Word)(addr - sym_addr) < st_size) {
       *offset = (int)(addr - sym_addr);
       *posIndex = sym->st_name;
       *stringtableIndex = shdr->sh_link;
@@ -76,9 +76,9 @@ bool ElfSymbolTable::lookup(address addr, int* stringtableIndex, int* posIndex, 
     return false;
   }
 
-  size_t  sym_size = sizeof(Elf_Sym);
+  size_t  sym_size = sizeof(Elf64_Sym);
   int count = checked_cast<int>(_section.section_header()->sh_size / sym_size);
-  Elf_Sym* symbols = (Elf_Sym*)_section.section_data();
+  Elf64_Sym* symbols = (Elf64_Sym*)_section.section_data();
 
   if (symbols != nullptr) {
     for (int index = 0; index < count; index ++) {
@@ -94,7 +94,7 @@ bool ElfSymbolTable::lookup(address addr, int* stringtableIndex, int* posIndex, 
       return false;
     }
 
-    Elf_Sym sym;
+    Elf64_Sym sym;
     for (int index = 0; index < count; index ++) {
       if (!mfd.read((void*)&sym, sizeof(sym))) {
         _status = NullDecoder::file_invalid;
