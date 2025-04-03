@@ -69,21 +69,21 @@ class DwarfFile;
 // ELF section, may or may not have cached data
 class ElfSection {
 private:
-  Elf_Shdr      _section_hdr;
+  Elf64_Shdr    _section_hdr;
   void*         _section_data;
   NullDecoder::decoder_status _stat;
 public:
-  ElfSection(FILE* fd, const Elf_Shdr& hdr);
+  ElfSection(FILE* fd, const Elf64_Shdr& hdr);
   ~ElfSection();
 
   NullDecoder::decoder_status status() const { return _stat; }
 
-  const Elf_Shdr* section_header() const { return &_section_hdr; }
-  const void*     section_data()   const { return (const void*)_section_data; }
+  const Elf64_Shdr* section_header() const { return &_section_hdr; }
+  const void*       section_data()   const { return (const void*)_section_data; }
 private:
   // load this section.
   // it return no_error, when it fails to cache the section data due to lack of memory
-  NullDecoder::decoder_status load_section(FILE* const file, const Elf_Shdr& hdr);
+  NullDecoder::decoder_status load_section(FILE* const file, const Elf64_Shdr& hdr);
 };
 
 class FileReader : public StackObj {
@@ -142,7 +142,7 @@ class ElfFile: public CHeapObj<mtInternal> {
   static const char* USR_LIB_DEBUG_DIRECTORY;
  protected:
   // Elf header
-  Elf_Ehdr          _elfHdr;
+  Elf64_Ehdr        _elfHdr;
 
  public:
   ElfFile(const char* filepath);
@@ -170,7 +170,7 @@ class ElfFile: public CHeapObj<mtInternal> {
 
  private:
   // sanity check, if the file is a real elf file
-  static bool is_elf_file(Elf_Ehdr&);
+  static bool is_elf_file(Elf64_Ehdr&);
 
   // parse this elf file
   NullDecoder::decoder_status parse_elf(const char* filename);
@@ -184,7 +184,7 @@ class ElfFile: public CHeapObj<mtInternal> {
 #if defined(PPC64) && !defined(ABI_ELFv2)
   // find a section by name, return section index
   // if there is no such section, return -1
-  int section_by_name(const char* name, Elf_Shdr& hdr);
+  int section_by_name(const char* name, Elf64_Shdr& hdr);
 #endif
 
   // string tables are stored in a linked list
@@ -279,7 +279,7 @@ class ElfFile: public CHeapObj<mtInternal> {
   FILE* fd() const { return _file; }
 
   // Read the section header of section 'name'.
-  bool read_section_header(const char* name, Elf_Shdr& hdr) const;
+  bool read_section_header(const char* name, Elf64_Shdr& hdr) const;
   bool is_valid_dwarf_file() const;
 
  public:

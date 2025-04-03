@@ -46,7 +46,7 @@ const char* ElfFile::USR_LIB_DEBUG_DIRECTORY = "/usr/lib/debug";
 // For test only, disable elf section cache and force to read from file directly.
 bool ElfFile::_do_not_cache_elf_section = false;
 
-ElfSection::ElfSection(FILE* fd, const Elf_Shdr& hdr) : _section_data(nullptr) {
+ElfSection::ElfSection(FILE* fd, const Elf64_Shdr& hdr) : _section_data(nullptr) {
   _stat = load_section(fd, hdr);
 }
 
@@ -56,7 +56,7 @@ ElfSection::~ElfSection() {
   }
 }
 
-NullDecoder::decoder_status ElfSection::load_section(FILE* const fd, const Elf_Shdr& shdr) {
+NullDecoder::decoder_status ElfSection::load_section(FILE* const fd, const Elf64_Shdr& shdr) {
   memcpy((void*)&_section_hdr, (const void*)&shdr, sizeof(shdr));
 
   if (ElfFile::_do_not_cache_elf_section) {
@@ -173,7 +173,7 @@ NullDecoder::decoder_status ElfFile::parse_elf(const char* filepath) {
 }
 
 //Check elf header to ensure the file is valid.
-bool ElfFile::is_elf_file(Elf_Ehdr& hdr) {
+bool ElfFile::is_elf_file(Elf64_Ehdr& hdr) {
   return (ELFMAG0 == hdr.e_ident[EI_MAG0] &&
       ELFMAG1 == hdr.e_ident[EI_MAG1] &&
       ELFMAG2 == hdr.e_ident[EI_MAG2] &&
@@ -198,7 +198,7 @@ NullDecoder::decoder_status ElfFile::load_tables() {
   }
 
   // walk elf file's section headers, and load string tables
-  Elf_Shdr shdr;
+  Elf64_Shdr shdr;
   if (!freader.set_position(_elfHdr.e_shoff)) {
     return NullDecoder::file_invalid;
   }
@@ -255,7 +255,7 @@ NullDecoder::decoder_status ElfFile::load_tables() {
 }
 
 #if defined(PPC64) && !defined(ABI_ELFv2)
-int ElfFile::section_by_name(const char* name, Elf_Shdr& hdr) {
+int ElfFile::section_by_name(const char* name, Elf64_Shdr& hdr) {
   assert(name != nullptr, "No section name");
   size_t len = strlen(name) + 1;
   char* buf = (char*)os::malloc(len, mtInternal);
@@ -375,7 +375,7 @@ bool ElfFile::get_source_info(const uint32_t offset_in_library, char* filename, 
 }
 
 bool ElfFile::is_valid_dwarf_file() const {
-  Elf_Shdr shdr;
+  Elf64_Shdr shdr;
   return read_section_header(".debug_abbrev", shdr) && read_section_header(".debug_aranges", shdr)
          && read_section_header(".debug_info", shdr) && read_section_header(".debug_line", shdr);
 }
@@ -403,7 +403,7 @@ bool ElfFile::load_dwarf_file() {
 // Read .gnu_debuglink section which contains:
 // Filename (null terminated) + 0-3 padding bytes (to 4 byte align) + CRC (4 bytes)
 bool ElfFile::read_debug_info(DebugInfo* debug_info) const {
-  Elf_Shdr shdr;
+  Elf64_Shdr shdr;
   if (!read_section_header(".gnu_debuglink", shdr)) {
     DWARF_LOG_DEBUG("Failed to read the .gnu_debuglink header.");
     return false;
@@ -531,7 +531,7 @@ bool ElfFile::load_dwarf_file_from_usr_lib_debug(DwarfFilePath& dwarf_file_path)
   return open_valid_debuginfo_file(dwarf_file_path);
 }
 
-bool ElfFile::read_section_header(const char* name, Elf_Shdr& hdr) const {
+bool ElfFile::read_section_header(const char* name, Elf64_Shdr& hdr) const {
   if (_shdr_string_table == nullptr) {
     assert(false, "section header string table should be loaded");
     return false;
@@ -744,7 +744,7 @@ bool DwarfFile::DebugAranges::find_compilation_unit_offset(const uint32_t offset
 }
 
 bool DwarfFile::DebugAranges::read_section_header() {
-  Elf_Shdr shdr;
+  Elf64_Shdr shdr;
   if (!_dwarf_file->read_section_header(".debug_aranges", shdr)) {
     return false;
   }
@@ -858,7 +858,7 @@ bool DwarfFile::CompilationUnit::find_debug_line_offset(uint32_t* debug_line_off
 
 // (3a) Parse header as specified in section 7.5.1.1 of the DWARF 4 spec.
 bool DwarfFile::CompilationUnit::read_header() {
-  Elf_Shdr shdr;
+  Elf64_Shdr shdr;
   if (!_dwarf_file->read_section_header(".debug_info", shdr)) {
     DWARF_LOG_ERROR("Failed to read the .debug_info section header.");
     return false;
@@ -898,7 +898,7 @@ bool DwarfFile::CompilationUnit::read_header() {
 }
 
 bool DwarfFile::DebugAbbrev::read_section_header(uint32_t debug_abbrev_offset) {
-  Elf_Shdr shdr;
+  Elf64_Shdr shdr;
   if (!_dwarf_file->read_section_header(".debug_abbrev", shdr)) {
     return false;
   }
@@ -1152,7 +1152,7 @@ bool DwarfFile::LineNumberProgram::find_filename_and_line_number(char* filename,
 
 // Parsing header as specified in section 6.2.4 of DWARF 4 spec. We do not read the file_names field, yet.
 bool DwarfFile::LineNumberProgram::read_header() {
-  Elf_Shdr shdr;
+  Elf64_Shdr shdr;
   if (!_dwarf_file->read_section_header(".debug_line", shdr)) {
     DWARF_LOG_ERROR("Failed to read the .debug_line section header.");
     return false;
